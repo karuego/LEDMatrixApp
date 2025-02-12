@@ -21,6 +21,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 
 import androidx.compose.material.*
@@ -32,6 +33,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.IntOffset
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
@@ -48,14 +51,19 @@ import kotlinx.serialization.Serializable
 
 import me.arkana.led_matrix.screen.*
 
+val myViewModel = MyViewModel()
+
 @Composable
-fun App() = MaterialTheme(
+fun App(
+    prefs: DataStore<Preferences>
+) = MaterialTheme(
     lightColors(
         primary = Color(0xff0d6efd),
         secondary = Color(0xff6c757d),
         error = Color(0xffdc3545),
     )
 ) {
+    //val myViewModel = MyViewModel()
     val navController = rememberNavController()
 
     // Get current back stack entry
@@ -63,67 +71,71 @@ fun App() = MaterialTheme(
     // Get the name of the current screen
     val currentScreen = backStackEntry?.destination?.route
 
-    NavHost(
-        navController = navController,
-        startDestination = Screen.Home,
-    ) {
-        composable<Screen.Home>(
-            exitTransition = {
-                if (
-                    targetState.destination.hasRoute<Screen.Settings>() or
-                    targetState.destination.hasRoute<Screen.Scan>()
-                ) {
-                    //fadeOut() + shrinkVertically()
-                    slideOutVertically(tween(700)) { it * 3 }
-                } else if (targetState.destination.hasRoute<Screen.Settings>()) {
-                    fadeOut(tween(700))
-                } else if (targetState.destination.hasRoute<Screen.Send.Video>()) {
-                    slideOutHorizontally(tween(700)) { it }
-                } else {
-                    slideOutHorizontally(tween(500)) { it }
-                }
-            },
-            popEnterTransition = {
-                if (initialState.destination.hasRoute<Screen.Scan>()) {
-                    slideInVertically { it * 3 }
-                } else if (initialState.destination.hasRoute<Screen.Settings>()) {
-                    slideInVertically { -it }
-                } else if (initialState.destination.hasRoute<Screen.Send.Text>()) {
-                    slideInHorizontally(tween(700)) { -it }
-                } else if (initialState.destination.hasRoute<Screen.Send.Video>()) {
-                    slideInVertically(tween(700)) { -it }
-                } else {
-                    slideInHorizontally(tween(700)) { it }
-                }
-            },
-        ) {
-            HomeScreen(navController)
-        }
+    val scope = rememberCoroutineScope()
 
-        composable<Screen.Settings>(
-            enterTransition = { fadeIn() + expandVertically() },
-            exitTransition = { shrinkHorizontally(tween(700)) },
+    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = Screen.Home,
         ) {
-            val args = it.toRoute<Screen.Settings>()
-            SettingsScreen(
-                navController = navController,
-                args = args
-            )
-        }
-
-        /*composable(
-            "scan",*/
-        composable<Screen.Scan>(
-            //enterTransition = { fadeIn() + expandHorizontally() },
-            enterTransition = { slideInVertically(tween(700)) { -it } },
-            exitTransition = { slideOutVertically(tween(700)) { -it } + fadeOut(tween(700)) },
-        ) {
-            ScanDeviceScreen {
-                handleNavigation(it, navController)
+            composable<Screen.Home>(
+                exitTransition = {
+                    if (
+                        targetState.destination.hasRoute<Screen.Settings>() or
+                        targetState.destination.hasRoute<Screen.Scan>()
+                    ) {
+                        //fadeOut() + shrinkVertically()
+                        slideOutVertically(tween(700)) { it * 3 }
+                    } else if (targetState.destination.hasRoute<Screen.Settings>()) {
+                        fadeOut(tween(700))
+                    } else if (targetState.destination.hasRoute<Screen.Send.Video>()) {
+                        slideOutHorizontally(tween(700)) { it }
+                    } else {
+                        slideOutHorizontally(tween(500)) { it }
+                    }
+                },
+                popEnterTransition = {
+                    if (initialState.destination.hasRoute<Screen.Scan>()) {
+                        slideInVertically { it * 3 }
+                    } else if (initialState.destination.hasRoute<Screen.Settings>()) {
+                        slideInVertically { -it }
+                    } else if (initialState.destination.hasRoute<Screen.Send.Text>()) {
+                        slideInHorizontally(tween(700)) { -it }
+                    } else if (initialState.destination.hasRoute<Screen.Send.Video>()) {
+                        slideInVertically(tween(700)) { -it }
+                    } else {
+                        slideInHorizontally(tween(700)) { it }
+                    }
+                },
+            ) {
+                HomeScreen(navController)
             }
-        }
 
-        sendGraph(navController)
+            composable<Screen.Settings>(
+                enterTransition = { fadeIn() + expandVertically() },
+                exitTransition = { shrinkHorizontally(tween(700)) },
+            ) {
+                val args = it.toRoute<Screen.Settings>()
+                SettingsScreen(
+                    navController = navController,
+                    args = args
+                )
+            }
+
+            /*composable(
+                "scan",*/
+            composable<Screen.Scan>(
+                //enterTransition = { fadeIn() + expandHorizontally() },
+                enterTransition = { slideInVertically(tween(700)) { -it } },
+                exitTransition = { slideOutVertically(tween(700)) { -it } + fadeOut(tween(700)) },
+            ) {
+                ScanDeviceScreen(contentPadding = innerPadding) {
+                    handleNavigation(it, navController)
+                }
+            }
+
+            sendGraph(navController)
+        }
     }
 }
 
@@ -185,5 +197,3 @@ sealed class Screen(val route: String) {
         @Serializable data object Video : Send("video")
     }
 }
-
-expect fun logDebug(tag: String?, msg: String)

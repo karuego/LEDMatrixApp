@@ -14,7 +14,7 @@ plugins {
 }
 
 kotlin {
-    androidTarget()
+    //androidTarget()
     androidTarget {
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
         compilerOptions {
@@ -24,7 +24,7 @@ kotlin {
     
     jvm("desktop")
     
-    @OptIn(ExperimentalWasmDsl::class)
+    /*@OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         moduleName = "composeApp"
         browser {
@@ -42,7 +42,7 @@ kotlin {
             }
         }
         binaries.executable()
-    }
+    }*/
     
     sourceSets {
         val desktopMain by getting
@@ -81,6 +81,9 @@ kotlin {
             //implementation(libs.ktor.client.content.negotiation)
             //implementation(libs.ktor.serialization.kotlinx.json)
             //implementation(libs.ktor.network)
+
+            api(libs.androidx.datastore.preferences)
+            api(libs.androidx.datastore)
         }
 
         desktopMain.dependencies {
